@@ -954,4 +954,29 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+class DebugDCmd: public DCmdWithParser {
+protected:
+  DCmdArgument<char*> _subcommand;
+  DCmdArgument<char*> _arg2;
+  DCmdArgument<bool> _verbose;
+public:
+  static int num_arguments() { return 1; }
+  DebugDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "VM.debug";
+  }
+  static const char* description() {
+    return "Debug utilities.";
+  }
+  static const char* impact() {
+      return "Medium: Depends on subcommand invoked.";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", nullptr};
+    return p;
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 #endif // SHARE_SERVICES_DIAGNOSTICCOMMAND_HPP

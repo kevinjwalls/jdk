@@ -158,6 +158,7 @@ void DCmd::register_dcmds(){
 #endif // INCLUDE_CDS
 
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<NMTDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DebugDCmd>(full_export, true, true));
 }
 
 HelpDCmd::HelpDCmd(outputStream* output, bool heap) : DCmdWithParser(output, heap),
@@ -1134,3 +1135,26 @@ void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const cha
   jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
   output()->print_raw((const char*)addr, ba->length());
 }
+
+DebugDCmd::DebugDCmd(outputStream* output, bool heap) :
+                                     DCmdWithParser(output, heap),
+  _subcommand("subcommand", "subcommand to invoke", "STRING", true, ""),
+  _arg2("arg2", "other details", "INT", false, 0),
+  _verbose("-verbose", "", "BOOLEAN", false, "false") {
+
+  _dcmdparser.add_dcmd_argument(&_subcommand);
+  _dcmdparser.add_dcmd_argument(&_arg2);
+  _dcmdparser.add_dcmd_option(&_verbose);
+}
+
+void DebugDCmd::execute(DCmdSource source, TRAPS) {
+  if (strcmp("universe", _subcommand.value()) == 0) {
+      Universe::print_on(output());
+  } else if (strcmp("find", _subcommand.value()) == 0) {
+    intptr_t x = strtoll(_arg2.value(), nullptr, 0);
+    os::print_location(output(), x, _verbose.is_set()); 
+  }  else {
+    output()->print_cr("unknown command");
+  }
+}
+

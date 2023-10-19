@@ -27,6 +27,7 @@
 #include "classfile/classLoaderHierarchyDCmd.hpp"
 #include "classfile/classLoaderStats.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/classPrinter.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -50,6 +51,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/diagnosticArgument.hpp"
@@ -1138,23 +1140,55 @@ void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const cha
 
 DebugDCmd::DebugDCmd(outputStream* output, bool heap) :
                                      DCmdWithParser(output, heap),
-  _subcommand("subcommand", "subcommand to invoke", "STRING", true, ""),
-  _arg2("arg2", "other details", "INT", false, 0),
+  _subcommand("subcommand", "subcommand", "STRING", true, ""),
+  _arg1("arg1", "other details", "STRING", false, 0),
+  _arg2("arg2", "other details", "STRING", false, 0),
+  _arg3("arg3", "other details", "STRING", false, 0),
   _verbose("-verbose", "", "BOOLEAN", false, "false") {
 
   _dcmdparser.add_dcmd_argument(&_subcommand);
+  _dcmdparser.add_dcmd_argument(&_arg1);
   _dcmdparser.add_dcmd_argument(&_arg2);
+  _dcmdparser.add_dcmd_argument(&_arg3);
   _dcmdparser.add_dcmd_option(&_verbose);
 }
 
 void DebugDCmd::execute(DCmdSource source, TRAPS) {
   if (strcmp("universe", _subcommand.value()) == 0) {
       Universe::print_on(output());
+  } else if (strcmp("events", _subcommand.value()) == 0) {
+    Events::print_all(output(), 100);
   } else if (strcmp("find", _subcommand.value()) == 0) {
-    intptr_t x = strtoll(_arg2.value(), nullptr, 0);
-    os::print_location(output(), x, _verbose.is_set()); 
+    intptr_t x = strtoll(_arg1.value(), nullptr, 0);
+    if (!dbg_is_safe((const void *)x, -1)) {
+      output()->print_cr("address not safe");
+    //} else if (!dbg_is_good_oop((oopDesc*) x)) { // not the best check...
+    } else if (!dbg_is_good_oop((oopDesc*) x)) {
+      output()->print_cr("oop not good");
+    } else {
+      os::print_location(output(), x, _verbose.is_set());
+    }
+  } else if (strcmp("threads", _subcommand.value()) == 0) {
+    // Threads::print_on_error() is safeest.
+    char buf[1024];
+    Threads::print_on_error(output(), THREAD, buf, 1024);
+  } else if (strcmp("findclass", _subcommand.value()) == 0) {
+    // ClassPrinter::print_classes(class_name_pattern, flags, tty);
+    if (!_arg1.has_value() || !_arg2.has_value()) {
+      output()->print_cr("missing argument");
+      ClassPrinter::print_flags_help(output());
+    }
+    long flags = strtol(_arg2.value(), nullptr, 0);
+    ClassPrinter::print_classes(_arg1.value(), flags, output());
+  } else if (strcmp("findmethod", _subcommand.value()) == 0) {
+    // ClassPrinter::print_methods(class_name_pattern, method_pattern, flags, tty);
+    if (!_arg1.has_value() || !_arg2.has_value() || !_arg3.has_value()) {
+      output()->print_cr("missing argument");
+    }
+    long flags = strtol(_arg3.value(), nullptr, 0);
+    ClassPrinter::print_methods(_arg1.value(), _arg2.value(), flags, output());
   }  else {
-    output()->print_cr("unknown command");
+    output()->print_cr("unknown sub-command");
   }
 }
 

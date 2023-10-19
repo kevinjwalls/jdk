@@ -957,10 +957,12 @@ public:
 class DebugDCmd: public DCmdWithParser {
 protected:
   DCmdArgument<char*> _subcommand;
+  DCmdArgument<char*> _arg1;
   DCmdArgument<char*> _arg2;
+  DCmdArgument<char*> _arg3;
   DCmdArgument<bool> _verbose;
 public:
-  static int num_arguments() { return 1; }
+  static int num_arguments() { return 4; } // 4 args, one option
   DebugDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "VM.debug";

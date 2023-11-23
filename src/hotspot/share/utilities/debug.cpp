@@ -57,6 +57,7 @@
 #include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"
+#include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -670,7 +671,12 @@ extern "C" bool dbg_is_safe(const void* p, intptr_t errvalue) {
 }
 
 extern "C" bool dbg_is_good_oop(oopDesc* o) {
-  return dbg_is_safe(o, -1) && dbg_is_safe(o->klass(), -1) && oopDesc::is_oop(o) && o->klass()->is_klass();
+  return dbg_is_safe(o, -1)
+    && is_aligned(o, ObjectAlignmentInBytes)
+    && o->klass() != nullptr
+    && dbg_is_safe(o->klass(), -1)
+    && oopDesc::is_oop(o)
+    && o->klass()->is_klass();
 }
 
 //////////////////////////////////////////////////////////////////////////////

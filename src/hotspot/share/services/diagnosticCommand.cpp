@@ -1155,18 +1155,24 @@ DebugDCmd::DebugDCmd(outputStream* output, bool heap) :
 
 void DebugDCmd::execute(DCmdSource source, TRAPS) {
   if (strcmp("universe", _subcommand.value()) == 0) {
-      Universe::print_on(output());
+    Universe::print_on(output()); // == GC.heap_info
   } else if (strcmp("events", _subcommand.value()) == 0) {
     Events::print_all(output(), 100);
   } else if (strcmp("find", _subcommand.value()) == 0) {
     intptr_t x = strtoll(_arg1.value(), nullptr, 0);
     if (!dbg_is_safe((const void *)x, -1)) {
       output()->print_cr("address not safe");
-    //} else if (!dbg_is_good_oop((oopDesc*) x)) { // not the best check...
-    } else if (!dbg_is_good_oop((oopDesc*) x)) {
-      output()->print_cr("oop not good");
     } else {
-      os::print_location(output(), x, _verbose.is_set());
+      // Safe pointer. Is it an oop?
+      if (Universe::heap()->is_in((oopDesc*) x)) {
+        if (!dbg_is_good_oop((oopDesc*) x)) {
+          output()->print_cr("oop not good");
+        } else {
+          os::print_location(output(), x, _verbose.is_set());
+        }
+      } else {
+        os::print_location(output(), x, _verbose.is_set());
+      }
     }
   } else if (strcmp("threads", _subcommand.value()) == 0) {
     // Threads::print_on_error() is safeest.

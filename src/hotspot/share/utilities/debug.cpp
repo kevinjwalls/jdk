@@ -671,12 +671,20 @@ extern "C" bool dbg_is_safe(const void* p, intptr_t errvalue) {
 }
 
 extern "C" bool dbg_is_good_oop(oopDesc* o) {
-  return dbg_is_safe(o, -1)
-    && is_aligned(o, ObjectAlignmentInBytes)
-    && o->klass() != nullptr
-    && dbg_is_safe(o->klass(), -1)
-    && oopDesc::is_oop(o)
-    && o->klass()->is_klass();
+  bool good = is_aligned(o, ObjectAlignmentInBytes)
+    && dbg_is_safe(o, -2);
+  if (good) {
+    Klass *k = o->klass_or_null(); // decodes if compressed
+    if (k != nullptr && is_aligned(k, ObjectAlignmentInBytes)
+      && dbg_is_safe(k, -3)) {
+      good = Metaspace::contains(k)
+        && oopDesc::is_oop(o);
+      if (good) {
+        return k->is_klass();
+      }
+    }
+  }
+  return false;
 }
 
 //////////////////////////////////////////////////////////////////////////////

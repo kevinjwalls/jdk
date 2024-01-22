@@ -954,7 +954,7 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-class DebugDCmd: public DCmdWithParser {
+class VMDebugDCmd: public DCmdWithParser {
 protected:
   DCmdArgument<char*> _subcommand;
   DCmdArgument<char*> _arg1;
@@ -962,8 +962,8 @@ protected:
   DCmdArgument<char*> _arg3;
   DCmdArgument<bool> _verbose;
 public:
-  static int num_arguments() { return 4; } // 4 args, one option
-  DebugDCmd(outputStream* output, bool heap);
+  static int num_arguments() { return 5; }
+  VMDebugDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "VM.debug";
   }

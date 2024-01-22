@@ -160,7 +160,7 @@ void DCmd::register_dcmds(){
 #endif // INCLUDE_CDS
 
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<NMTDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DebugDCmd>(full_export, true, true));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMDebugDCmd>(full_export, true, true));
 }
 
 HelpDCmd::HelpDCmd(outputStream* output, bool heap) : DCmdWithParser(output, heap),
@@ -1138,7 +1138,7 @@ void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const cha
   output()->print_raw((const char*)addr, ba->length());
 }
 
-DebugDCmd::DebugDCmd(outputStream* output, bool heap) :
+VMDebugDCmd::VMDebugDCmd(outputStream* output, bool heap) :
                                      DCmdWithParser(output, heap),
   _subcommand("subcommand", "subcommand", "STRING", true, ""),
   _arg1("arg1", "other details", "STRING", false, 0),
@@ -1153,14 +1153,17 @@ DebugDCmd::DebugDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_verbose);
 }
 
-void DebugDCmd::execute(DCmdSource source, TRAPS) {
+void VMDebugDCmd::execute(DCmdSource source, TRAPS) {
+  DebuggingContext dc{}; // avoid asserts
+
   if (strcmp("universe", _subcommand.value()) == 0) {
     Universe::print_on(output()); // == GC.heap_info
   } else if (strcmp("events", _subcommand.value()) == 0) {
     Events::print_all(output(), 100);
   } else if (strcmp("find", _subcommand.value()) == 0) {
     intptr_t x = strtoll(_arg1.value(), nullptr, 0);
-    if (!dbg_is_safe((const void *)x, -1)) {
+    // if (!dbg_is_safe((const void *)x, -1)) {
+    if (!os::is_readable_pointer((intptr_t*) x)) { // uses SafeFetch
       output()->print_cr("address not safe");
     } else {
       // Safe pointer. Is it an oop?

@@ -1167,14 +1167,11 @@ void VMDebugDCmd::execute(DCmdSource source, TRAPS) {
       output()->print_cr("address not safe");
     } else {
       // Safe pointer. Is it an oop?
-      if (Universe::heap()->is_in((oopDesc*) x)) {
-        if (!dbg_is_good_oop((oopDesc*) x)) {
+      if (Universe::heap()->is_in((oopDesc*) x) &&
+         !dbg_is_good_oop((oopDesc*) x)) {
           output()->print_cr("oop not good");
-        } else {
-          os::print_location(output(), x, _verbose.is_set());
-        }
       } else {
-        os::print_location(output(), x, _verbose.is_set());
+          os::print_location(output(), x, _verbose.is_set());
       }
     }
   } else if (strcmp("threads", _subcommand.value()) == 0) {

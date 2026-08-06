@@ -510,7 +510,7 @@
           "If node count exceeds limit stop inlining")                      \
           range(0, max_jint)                                                \
                                                                             \
-  product(bool, DelayAfterInliningCutoff, true, DIAGNOSTIC,                 \
+  product(bool, DelayAfterInliningCutoff, false, DIAGNOSTIC,                \
           "If node count exceeds limit during parsing, attempt inlining "   \
           "later instead of giving up completely")                          \
                                                                             \
@@ -600,6 +600,14 @@
   product(intx, EliminateAllocationFieldsLimit, 512, DIAGNOSTIC,            \
           "Number of fields in instance limit for scalar replacement")      \
           range(0, max_jint)                                                \
+                                                                            \
+  product(bool, StressEliminateAllocations, false, DIAGNOSTIC,              \
+          "Randomly fail allocation elimination attempts")                  \
+                                                                            \
+  product(uint, StressEliminateAllocationsMean, 20, DIAGNOSTIC,             \
+          "The expected number of elimination checks made until "           \
+          "a random failure.")                                              \
+          range(1, max_juint)                                               \
                                                                             \
   product(bool, OptimizePtrCompare, true,                                   \
           "Use escape analysis to optimize pointers compare")               \
@@ -789,6 +797,11 @@
           "high tier compiler")                                             \
           range(0, max_jint)                                                \
                                                                             \
+  product(bool, InlineColdMethods, false, DIAGNOSTIC,                       \
+          "Inline cold methods that would otherwise be rejected due to "    \
+          "cold profile counters. Useful for compiler testing to expose "   \
+          "more code to compilers.")                                        \
+                                                                            \
   product(bool, IncrementalInline, true,                                    \
           "do post parse inlining")                                         \
                                                                             \
@@ -876,6 +889,12 @@
           "Move checks with an uncommon trap out of loops based on "        \
           "profiling data. "                                                \
           "Requires UseLoopPredicate to be turned on (default).")           \
+                                                                            \
+  product(bool, UseArrayLoadStoreProfile, true, DIAGNOSTIC,                 \
+          "Take advantage of profiling at array load/store")                \
+                                                                            \
+  product(bool, UseACmpProfile, true, DIAGNOSTIC,                           \
+          "Take advantage of profiling at if_acmp<cond>")                   \
                                                                             \
   develop(uintx, StressLongCountedLoop, 0,                                  \
           "if > 0, convert int counted loops to long counted loops"         \
